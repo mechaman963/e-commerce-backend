@@ -1,0 +1,21 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "php artisan serve --host=0.0.0.0 --port=$PORT"
+
+[build.environment]
+NODE_VERSION = "18.x"
+PHP_VERSION = "8.1"
+
+[build.install]
+  [build.install.npm]
+    build = "npm install && npm run build"
+  [build.install.composer]
+    build = "composer install --optimize-autoloader --no-dev"
+
+[build.build]
+  [build.build.npm]
+    build = "npm run build"
+  [build.build.artisan]
+    build = "php artisan optimize"
