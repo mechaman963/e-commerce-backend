@@ -17,21 +17,25 @@ class AuthController extends Controller
     // Register Method
 
     public function Register(RegisterRequest $request)
-    {
-        $request->validated();
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-        $token = $user->createToken('token')->accessToken;
-        $refreshToken = $user->createToken('authTokenRefresh')->accessToken;
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
+{
+    $validated = $request->validated();
+    
+    $user = User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => Hash::make($validated['password']),
+    ]);
 
-        ], 200);
-    }
+    // Create token using Passport's createToken
+    $token = $user->createToken('authToken')->accessToken;
+
+    return response()->json([
+        'user' => $user,
+        'token' => $token,
+        'token_type' => 'Bearer',
+        'expires_in' => 60 * 24 * 7, // 1 week in minutes
+    ], 201); // Use 201 for resource created
+}
 
     // Login Method
     public function login(Request $request)
