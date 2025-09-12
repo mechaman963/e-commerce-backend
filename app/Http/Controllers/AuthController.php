@@ -16,69 +16,64 @@ class AuthController extends Controller
 {
     // Register Method
 
-    public function Register(RegisterRequest $request)
-{
-    $validated = $request->validated();
-    
-    $user = User::create([
-        'name' => $validated['name'],
-        'email' => $validated['email'],
-        'password' => Hash::make($validated['password']),
-    ]);
+   public function register(RegisterRequest $request)
+    {
+        $validated = $request->validated();
 
-    // Create token using Passport's createToken
-    $token = $user->createToken('authToken')->accessToken;
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+        ]);
 
-    return response()->json([
-        'user' => $user,
-        'token' => $token,
-        'token_type' => 'Bearer',
-        'expires_in' => 60 * 24 * 7, // 1 week in minutes
-    ], 201); // Use 201 for resource created
-}
+        // Sanctum token
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-    // Login Method
+        return response()->json([
+            'message' => 'User registered successfully',
+            'user'    => $user,
+            'token'   => $token,
+            'token_type' => 'Bearer',
+        ], 201);
+    }
+
+    // Login
     public function login(Request $request)
-{
-    \Log::info('Login attempt', ['email' => $request->email]);
-    
-    try {
+    {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required',
         ]);
 
-        $credentials = $request->only('email', 'password');
-
-        if (!Auth::attempt($credentials)) {
-            \Log::warning('Invalid credentials', ['email' => $request->email]);
-            return response()->json(['error' => 'Invalid credentials'], 401);
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return response()->json([
+                'error' => 'Invalid credentials'
+            ], 401);
         }
 
-        $user = $request->user();
-        \Log::info('User authenticated', ['user_id' => $user->id]);
-        
-        // Check if user model has the expected methods
-        if (!method_exists($user, 'createToken')) {
-            \Log::error('User model does not have createToken method');
-            throw new \Exception('User model is not properly set up for API authentication');
-        }
+        $user = User::where('email', $request->email)->firstOrFail();
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        // Sanctum token
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
-            'token' => $token,
-            'role' => $user->role,
-            'currentUserId' => $user->id,
+            'message' => 'Login successful',
+            'user'    => $user,
+            'token'   => $token,
+            'token_type' => 'Bearer',
         ], 200);
+    }
 
-    } catch (\Exception $e) {
-        \Log::error('Login error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-        return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
+    // Logout
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully'
+        ]);
     }
 }
-
     // Logout Method
     public function logout(Request $request)
     {
