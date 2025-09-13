@@ -83,7 +83,7 @@ class CartController extends Controller
                     'user_id' => $userId,
                     'product_id' => $productId,
                     'quantity' => $quantity,
-                    'price' => $product->sale > 0 ? $product->price - $product->sale : $product->price
+                    'price' => $product->discount > 0 ? $product->price - $product->discount : $product->price
                 ]);
 
                 return response()->json([
