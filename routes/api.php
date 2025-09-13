@@ -24,8 +24,8 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::controller(AuthController::class)->group(function () {
-    Route::post('/register', 'Register');
-    Route::post('/login', 'Login');
+    Route::post('/register', 'register');
+    Route::post('/login', 'login');
     Route::post('/passowrd', 'sendResetLink');
     Route::post('/reset-password', 'reset');
 });
