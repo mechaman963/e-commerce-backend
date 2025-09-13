@@ -16,31 +16,39 @@ class AuthController extends Controller
 {
     // Register Method
 
-    public function Register(RegisterRequest $request)
+   public function register(RegisterRequest $request)
     {
-        $request->validated();
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-        $token = $user->createToken('token')->accessToken;
-        $refreshToken = $user->createToken('authTokenRefresh')->accessToken;
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
+        $validated = $request->validated();
 
-        ], 200);
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        // Sanctum token
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'User registered successfully',
+            'user'    => $user,
+            'token'   => $token,
+            'token_type' => 'Bearer',
+        ], 201);
     }
 
-    // Login Method
-    public function Login(LoginRequest $request)
+    // Login
+    public function login(Request $request)
     {
-        $request->validated();
-        $credentials = request(['email', 'password']);
+        $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required',
+        ]);
 
-        if (!Auth::attempt($credentials)) {
-            return response()->json(['error' => 'Invalid credentials'], 401);
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return response()->json([
+                'error' => 'Invalid credentials'
+            ], 401);
         }
 
         $user = $request->user();
@@ -49,6 +57,7 @@ class AuthController extends Controller
         $token->save();
 
         return response()->json([
+            'message' => 'Login successful',
             'user' => $user,
             'token' => $tokenResult->accessToken,
             'token_type' => 'Bearer',
@@ -60,10 +69,14 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // Logout Method
+    // Logout
     public function logout(Request $request)
     {
-        $request->user()->token()->revoke();
-        return response()->json(['message' => 'Successfully logged out'], 200);
+        $request->user()->tokens()->delete();
+        $request->user()->token()?->revoke();
+        
+        return response()->json([
+            'message' => 'Successfully logged out'
+        ], 200);
     }
 }
