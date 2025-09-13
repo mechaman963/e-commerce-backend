@@ -50,7 +50,7 @@ Route::get('/login-google', [socialAuthController::class, 'redirectToProvider'])
 Route::get('/auth/google/callback', [socialAuthController::class, 'handleCallback']);
 
 // Protected Routes
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     // Users
     Route::get('/user', [UsersContoller::class, 'authUser']);
     Route::get('/user/{id}', [UsersContoller::class, 'getUser']); // Allow authenticated users to get their own info
