@@ -9,8 +9,6 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
-use Laravel\Passport\RefreshTokenRepository;
-use Laravel\Passport\TokenRepository;
 
 class AuthController extends Controller
 {
@@ -39,27 +37,27 @@ class AuthController extends Controller
 
     // Login
     public function login(Request $request)
-    {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-        ]);
+{
+    $request->validate([
+        'email'    => 'required|email',
+        'password' => 'required',
+    ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json([
-                'error' => 'Invalid credentials'
-            ], 401);
-        }
+    if (!Auth::attempt($request->only('email', 'password'))) {
+        return response()->json([
+            'error' => 'Invalid credentials'
+        ], 401);
+    }
 
-        $user = $request->user();
-        $tokenResult = $user->createToken('Personal Access Token');
-        $token = $tokenResult->token;
-        $token->save();
+    $user = $request->user();
+
+    // Sanctum token
+    $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login successful',
             'user' => $user,
-            'token' => $tokenResult->accessToken,
+            'token' => $token,
             'token_type' => 'Bearer',
             'expires_at' => Carbon::parse(
                 $tokenResult->token->expires_at
@@ -71,12 +69,12 @@ class AuthController extends Controller
 
     // Logout
     public function logout(Request $request)
-    {
-        $request->user()->tokens()->delete();
-        $request->user()->token()?->revoke();
-        
-        return response()->json([
-            'message' => 'Successfully logged out'
-        ], 200);
-    }
+{
+    // Delete all tokens for this user
+    $request->user()->tokens()->delete();
+
+    return response()->json([
+        'message' => 'Successfully logged out'
+    ], 200);
+}
 }
